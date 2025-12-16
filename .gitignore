@@ -22,3 +22,7 @@ models/
 # OS / IDE
 .DS_Store
 .vscode/
+
+# Local Chat Storage (Crucial for privacy)
+backend/data/*.json
+!backend/data/.gitkeep
