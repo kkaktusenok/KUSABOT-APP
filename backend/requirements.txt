@@ -1,5 +1,6 @@
 fastapi==0.109.0
 uvicorn==0.27.0
-openai # Client for vLLM
-docker # Library to swap containers
+openai
+docker
 python-dotenv==1.0.0
+psutil # Required for real-time CPU and RAM monitoring

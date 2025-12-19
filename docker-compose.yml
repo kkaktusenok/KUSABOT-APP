@@ -1,9 +1,7 @@
 services:
-  # The "Brain" of your OS - Official vLLM Image
   vllm-engine:
     image: vllm/vllm-openai:latest
     container_name: kusabot-vllm
-    # neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8 — отличная модель,
     command: >
       neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8
       --gpu-memory-utilization 0.8
@@ -22,7 +20,6 @@ services:
               count: all
               capabilities: [gpu]
 
-  # Your Custom Backend (Orchestrator)
   backend:
     build: ./backend
     container_name: kusabot-api
@@ -30,7 +27,6 @@ services:
       - vllm-engine
     volumes:
       - ./backend:/app
-      - /var/run/docker.sock:/var/run/docker.sock # Allows backend to control other containers
       - ./backend/data:/app/data
     ports:
       - "8001:8001"
