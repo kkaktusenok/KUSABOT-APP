@@ -5,7 +5,6 @@ import Sidebar from '@/components/Sidebar';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-// Импортированы все необходимые иконки
 import { 
   Terminal, Send, Cpu, User, Activity, X, 
   Monitor, Copy, Check, Hash, ChevronDown 
@@ -13,11 +12,19 @@ import {
 import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import 'highlight.js/styles/github-dark.css';
 
-interface Message { role: 'user' | 'bot'; text: string; }
-interface Chat { id: string; title: string; messages: Message[]; }
+// Определяем интерфейсы строго
+interface Message { 
+  role: 'user' | 'bot'; 
+  text: string; 
+}
+
+interface Chat { 
+  id: string; 
+  title: string; 
+  messages: Message[]; 
+}
 
 export default function Home() {
-  // Инициализация массивами для предотвращения .map/.find ошибок
   const [chats, setChats] = useState<Chat[]>([]);
   const [models, setModels] = useState<string[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -28,18 +35,20 @@ export default function Home() {
   const [selectedModel, setSelectedModel] = useState('');
 
   useEffect(() => {
-    // Загрузка чатов
-    fetch('http://127.0.0.1:8001/get_chats').then(r => r.json()).then(data => {
-      if (Array.isArray(data)) setChats(data);
-    });
-    // Загрузка списка моделей
+    fetch('http://127.0.0.1:8001/get_chats')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setChats(data);
+      });
+
     fetch('http://127.0.0.1:8001/models')
       .then(r => r.json())
       .then(data => {
         const list = Array.isArray(data) ? data : [];
         setModels(list);
         if (list.length > 0) setSelectedModel(list[0]);
-      }).catch(() => setModels([]));
+      })
+      .catch(() => setModels([]));
   }, []);
 
   useEffect(() => {
@@ -49,7 +58,12 @@ export default function Home() {
         .then(r => r.json())
         .then(d => {
           if (d && d.global) {
-            const update = { time: new Date().toLocaleTimeString(), ...d.global, app_cpu: d.app.cpu, app_ram: d.app.ram_gb };
+            const update = { 
+              time: new Date().toLocaleTimeString(), 
+              ...d.global, 
+              app_cpu: d.app.cpu, 
+              app_ram: d.app.ram_gb 
+            };
             setHistory(prev => [...prev, update].slice(-30));
           }
         });
@@ -57,22 +71,28 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [showStats]);
 
-  // Безопасный поиск активного чата
   const activeChat = Array.isArray(chats) ? chats.find(c => c.id === activeChatId) : null;
   const latest = history[history.length - 1] || { cpu: 0, ram_pct: 0, ram_gb: '0/0', app_cpu: 0, app_ram: '0' };
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
-    let tId = activeChatId || Date.now().toString();
+    
+    const tId = activeChatId || Date.now().toString();
+    
     if (!activeChatId) {
       setChats(prev => [{ id: tId, title: input.substring(0, 20), messages: [] }, ...prev]);
       setActiveChatId(tId);
     }
 
-    const userMsg = { role: 'user', text: input } as Message;
-    setChats(prev => prev.map(c => c.id === tId ? { ...c, messages: [...c.messages, userMsg] } : c));
+    const userMsg: Message = { role: 'user', text: input };
+    
+    setChats(prev => prev.map(c => 
+      c.id === tId ? { ...c, messages: [...c.messages, userMsg] } : c
+    ));
+
     const promptToSend = input;
-    setInput(''); setIsLoading(true);
+    setInput(''); 
+    setIsLoading(true);
 
     try {
       const res = await fetch('http://127.0.0.1:8001/generate', {
@@ -80,29 +100,54 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: promptToSend, model: selectedModel })
       });
+      
       const data = await res.json();
+      const botResponseText = String(data.response || "ERROR: SYSTEM_OFFLINE");
+      
+      // Создаем объект бота с явным указанием типа Message
+      const botMsg: Message = { role: 'bot', text: botResponseText };
+
       setChats(prev => prev.map(c => {
         if (c.id === tId) {
-          const updated = { ...c, messages: [...c.messages, { role: 'bot', text: data.response || "ERROR: SYSTEM_OFFLINE" }] };
-          fetch('http://127.0.0.1:8001/save_chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(updated)});
+          const updated: Chat = { ...c, messages: [...c.messages, botMsg] };
+          fetch('http://127.0.0.1:8001/save_chat', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(updated)
+          });
           return updated;
         }
         return c;
       }));
-    } finally { setIsLoading(false); }
+    } catch (error) {
+      console.error("Failed to generate:", error);
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
-  const CodeBlock = ({ children, className }: any) => {
+  const CodeBlock = ({ children }: any) => {
     const [copied, setCopied] = useState(false);
+    const codeString = String(children).replace(/\n$/, '');
+    
     return (
       <div className="my-4 rounded-lg overflow-hidden border border-zinc-800 bg-black/40 font-bold">
         <div className="flex items-center justify-between bg-zinc-900/80 px-4 py-2 text-[10px] border-b border-zinc-800 text-zinc-400 font-mono uppercase tracking-widest">
           <span className="flex items-center gap-2"><Hash size={12} /> CODE_SNIPPET</span>
-          <button onClick={() => {navigator.clipboard.writeText(String(children)); setCopied(true); setTimeout(() => setCopied(false), 2000)}} className="hover:text-green-500 flex items-center gap-1 transition-colors uppercase">
+          <button 
+            onClick={() => {
+              navigator.clipboard.writeText(codeString); 
+              setCopied(true); 
+              setTimeout(() => setCopied(false), 2000);
+            }} 
+            className="hover:text-green-500 flex items-center gap-1 transition-colors uppercase"
+          >
             {copied ? <Check size={12} /> : <Copy size={12} />} {copied ? 'DONE' : 'COPY'}
           </button>
         </div>
-        <pre className="p-4 overflow-x-auto text-sm text-zinc-300 font-mono font-bold"><code>{children}</code></pre>
+        <pre className="p-4 overflow-x-auto text-sm text-zinc-300 font-mono font-bold">
+          <code>{children}</code>
+        </pre>
       </div>
     );
   };
@@ -110,7 +155,8 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-[#050505] text-zinc-300 font-mono overflow-hidden selection:bg-green-900/30 font-bold">
       <Sidebar 
-        chats={chats} activeChatId={activeChatId} 
+        chats={chats} 
+        activeChatId={activeChatId} 
         onNewChat={() => setActiveChatId(null)} 
         onSelectChat={setActiveChatId} 
         onDeleteChat={async (id) => { 

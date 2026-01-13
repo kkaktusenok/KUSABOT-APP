@@ -16,9 +16,8 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 MODELS_CONFIG = DATA_DIR / "models.json"
 
 # Если файла нет, создаем его с твоей текущей моделью
-if not MODELS_CONFIG.exists():
-    with open(MODELS_CONFIG, "w", encoding="utf-8") as f:
-        json.dump(["neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8"], f)
+with open(MODELS_CONFIG, "w", encoding="utf-8") as f:
+    json.dump(["unsloth/Llama-3.2-1B-Instruct"], f)
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
