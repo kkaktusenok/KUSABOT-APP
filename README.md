@@ -1,7 +1,7 @@
-# ⛩️ KUSABOT-OS (草ボット)
+# ⛩️ KUSABOT-APP (草ボット)
 > **Local AI Orchestrator | High Velocity | Linux Native**
 
-KUSABOT-OS is a lightweight, local-first AI management layer designed for high-performance inference using **vLLM** and a modern **Next.js 15** interface.
+KUSABOT-APP is a lightweight, local-first AI management layer designed for high-performance inference using **vLLM** and a modern **Next.js 15** interface.
 
 ## 🛠️ Stack
 - **Frontend:** Next.js 15 (App Router), Tailwind CSS
