@@ -12,7 +12,7 @@ import {
 import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import 'highlight.js/styles/github-dark.css';
 
-// Определяем интерфейсы строго
+// Интерфейсы для типизации данных
 interface Message { 
   role: 'user' | 'bot'; 
   text: string; 
@@ -34,6 +34,7 @@ export default function Home() {
   const [history, setHistory] = useState<any[]>([]);
   const [selectedModel, setSelectedModel] = useState('');
 
+  // Инициализация данных
   useEffect(() => {
     fetch('http://127.0.0.1:8001/get_chats')
       .then(r => r.json())
@@ -51,6 +52,7 @@ export default function Home() {
       .catch(() => setModels([]));
   }, []);
 
+  // Телеметрия (Системные статы)
   useEffect(() => {
     if (!showStats) return;
     const interval = setInterval(() => {
@@ -74,6 +76,7 @@ export default function Home() {
   const activeChat = Array.isArray(chats) ? chats.find(c => c.id === activeChatId) : null;
   const latest = history[history.length - 1] || { cpu: 0, ram_pct: 0, ram_gb: '0/0', app_cpu: 0, app_ram: '0' };
 
+  // Функция отправки сообщения
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
     
@@ -85,10 +88,7 @@ export default function Home() {
     }
 
     const userMsg: Message = { role: 'user', text: input };
-    
-    setChats(prev => prev.map(c => 
-      c.id === tId ? { ...c, messages: [...c.messages, userMsg] } : c
-    ));
+    setChats(prev => prev.map(c => c.id === tId ? { ...c, messages: [...c.messages, userMsg] } : c));
 
     const promptToSend = input;
     setInput(''); 
@@ -102,14 +102,20 @@ export default function Home() {
       });
       
       const data = await res.json();
-      const botResponseText = String(data.response || "ERROR: SYSTEM_OFFLINE");
-      
-      // Создаем объект бота с явным указанием типа Message
-      const botMsg: Message = { role: 'bot', text: botResponseText };
+
+      if (!res.ok) {
+        throw new Error(data.detail || "SYSTEM_FAILURE");
+      }
+
+      const botMsg: Message = { 
+        role: 'bot', 
+        text: String(data.response) 
+      };
 
       setChats(prev => prev.map(c => {
         if (c.id === tId) {
           const updated: Chat = { ...c, messages: [...c.messages, botMsg] };
+          // Сохраняем в БД через бэкенд
           fetch('http://127.0.0.1:8001/save_chat', { 
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
@@ -119,13 +125,18 @@ export default function Home() {
         }
         return c;
       }));
-    } catch (error) {
-      console.error("Failed to generate:", error);
+    } catch (error: any) {
+      const errMsg: Message = { 
+        role: 'bot', 
+        text: `❌ CRITICAL_ERROR: ${error.message || 'UNABLE_TO_CONTACT_CORE'}` 
+      };
+      setChats(prev => prev.map(c => c.id === tId ? { ...c, messages: [...c.messages, errMsg] } : c));
     } finally { 
       setIsLoading(false); 
     }
   };
 
+  // Стилизация блоков кода
   const CodeBlock = ({ children }: any) => {
     const [copied, setCopied] = useState(false);
     const codeString = String(children).replace(/\n$/, '');
@@ -192,6 +203,7 @@ export default function Home() {
           </div>
         </header>
 
+        {/* Оверлей статистики */}
         {showStats && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/95 p-4 animate-in fade-in duration-300">
             <div className="w-full max-w-3xl bg-zinc-950 border border-zinc-800 rounded-2xl p-8 relative shadow-2xl flex flex-col font-bold">

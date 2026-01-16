@@ -1,17 +1,13 @@
 services:
-  vllm-engine:
-    image: vllm/vllm-openai:latest
-    container_name: kusabot-vllm
-    command: >
-      unsloth/Llama-3.2-1B-Instruct
-      --gpu-memory-utilization 0.5
-      --max-model-len 1024
-      --max-num-seqs 4
-      --enforce-eager
+  ollama-engine:
+    image: ollama/ollama:latest
+    container_name: kusabot-ollama
     volumes:
-      - ~/.cache/huggingface:/root/.cache/huggingface
+      - ollama_data:/root/.ollama
     ports:
-      - "8000:8000"
+      - "11434:11434"
+    
+    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 10 && ollama pull llama3.2:1b && wait" ]
     deploy:
       resources:
         reservations:
@@ -24,15 +20,16 @@ services:
     build: ./backend
     container_name: kusabot-api
     depends_on:
-      - vllm-engine
+      - ollama-engine
     volumes:
       - ./backend:/app
       - ./backend/data:/app/data
     ports:
       - "8001:8001"
     environment:
-      - VLLM_URL=http://vllm-engine:8000/v1
-      
+      - OLLAMA_BASE_URL=http://ollama-engine:11434
+      - DEFAULT_MODEL=llama3.2:1b
+
   frontend:
     build: ./frontend
     ports:
@@ -41,3 +38,6 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:8001
     depends_on:
       - backend
+
+volumes:
+  ollama_data:
