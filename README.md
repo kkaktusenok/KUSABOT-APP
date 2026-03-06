@@ -54,7 +54,6 @@ This makes KUSABOT practical for real use — you can switch between models on t
 
 ### Prerequisites
 - Docker & Docker Compose installed
-- Linux OS (Ubuntu 20.04+ / Debian 11+)
 - GPU optional — runs on CPU too
 
 ### 1. Clone the repo
