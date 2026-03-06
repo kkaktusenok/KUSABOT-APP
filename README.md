@@ -15,7 +15,7 @@
 
 Most local AI tools are either too slow, too complex to set up, or just wrappers around cloud APIs.
 
-KUSABOT is different. It's a **self-hosted AI chat platform** built for maximum inference speed using **vLLM** — the fastest open-source LLM serving engine. The entire stack runs in Docker and is accessible through a clean **Next.js 15** interface.
+KUSABOT is different. It's a **self-hosted AI chat platform** powered by **Ollama** — swap models on the fly without restarting anything. The entire stack runs in Docker and is accessible through a clean **Next.js 15** interface.
 
 **You get:**
 - 🔒 100% local — your data never leaves your machine
